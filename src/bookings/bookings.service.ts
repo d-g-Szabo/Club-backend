@@ -66,13 +66,12 @@ export class BookingsService {
   // Get all bookings for a club (sessions owned by a specific user/club)
   async findAllForClub(query: BookingForClubQueryDto) {
     const { page = 1, limit = 10, user_id, session_id, place_id } = query;
-    // Build the query for club-owned sessions
-    let supaQuery = supabase.from('bookings').select('*, sessions(*, users(*)), places(*), users(*)', { count: 'exact' });
-    console.log(user_id, 'user_id'); // Debug: log the user_id
-    if (user_id) {
-      // Filter bookings where the session is owned by this user/club
-      supaQuery = supaQuery.eq('sessions.user_id', user_id);
-    }
+    // select all the sesions with the user_id
+    const { data: sessions, error: sessionsError } = await supabase.from('sessions').select('*').eq('user_id', user_id);
+    if (sessionsError) throw new BadRequestException(sessionsError.message);
+    // now let's get all the bookings for these sessions
+    let supaQuery = supabase.from('bookings').select('*, sessions(*, users(*)), places(*), users(*)', { count: 'exact' }).in('session_id', sessions.map(session => session.id));
+    
     if (session_id) {
       supaQuery = supaQuery.eq('session_id', session_id);
     }

@@ -16,6 +16,18 @@ export class BookingsService {
       dto.status = 'completed';
       dto.amount = 0;
       dto.currency = 'USD';
+      
+      const { booked_slots } = session.data;
+      const newBookedSlots = booked_slots + 1;
+      // Update the session's booked_slots field
+      const { error: updateError } = await supabase
+        .from('sessions')
+        .update({ booked_slots: newBookedSlots })
+        .eq('id', dto.session_id);
+      
+        if (updateError) {
+        throw new BadRequestException('Failed to update booked slots: ' + updateError.message);
+      }
     }
     // Prepare booking data, using defaults if not provided
     const { status, payment_id, amount, currency, ...rest } = dto;
